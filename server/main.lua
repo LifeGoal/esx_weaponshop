@@ -116,7 +116,9 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 				xPlayer.removeAccountMoney('black_money', selectedWeapon.ammoPrice)
 				cb(true)
 			else
-				TriggerClientEvent('esx:showNotification', source, _U('not_enough_black'))
+				if not max then
+					TriggerClientEvent('esx:showNotification', source, _U('not_enough_black'))
+				end
 				cb(false)
 			end
 		end
