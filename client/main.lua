@@ -416,8 +416,6 @@ function ReachedMaxAmmo(weaponName)
 
 	local ammo = GetAmmoInPedWeapon(PlayerPedId(), weaponName)
 	local _,maxAmmo = GetMaxAmmo(PlayerPedId(), weaponName)
-	print(ammo)
-	print(maxAmmo)
 
 	if ammo ~= maxAmmo then
 		return false
