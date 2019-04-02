@@ -10,4 +10,13 @@ Locales ['sv'] = {
   ['shop_menu_prompt'] = 'tryck ~INPUT_CONTEXT~ för att komma åt ~y~vapenaffären~s~.',
   ['shop_menu_item'] = '%s SEK',
   ['map_blip'] = 'vapenaffär',
+  ['gunshop_owned'] = 'owned',
+  ['gunshop_free'] = 'free',
+  ['gunshop_money'] = 'You don\'t have enough money',
+  ['gunshop_bought'] = 'you bought an ~y~%s~s~ for ~r~$%s~s~',
+  ['gunshop_item'] = '$%s',
+  ['gunshop_weapontitle'] = 'Weapon shop',
+  ['gunshop_componenttitle'] = 'Weapon shop - Weapon attatchments',
+  ['gunshop_hascomponent'] = 'you have that attatchment equiped!',
+  ['ammo'] = 'ammo',
 }

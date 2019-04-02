@@ -1,31 +1,6 @@
 ESX = nil
-local shopItems = {}
 
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-
-MySQL.ready(function()
-
-	MySQL.Async.fetchAll('SELECT * FROM weashops', {}, function(result)
-		for i=1, #result, 1 do
-			if shopItems[result[i].zone] == nil then
-				shopItems[result[i].zone] = {}
-			end
-
-			table.insert(shopItems[result[i].zone], {
-				item  = result[i].item,
-				price = result[i].price,
-				label = ESX.GetWeaponLabel(result[i].item)
-			})
-		end
-
-		TriggerClientEvent('esx_weaponshop:sendShop', -1, shopItems)
-	end)
-
-end)
-
-ESX.RegisterServerCallback('esx_weaponshop:getShop', function(source, cb)
-	cb(shopItems)
-end)
 
 ESX.RegisterServerCallback('esx_weaponshop:buyLicense', function(source, cb)
 	local xPlayer = ESX.GetPlayerFromId(source)
@@ -42,23 +17,70 @@ ESX.RegisterServerCallback('esx_weaponshop:buyLicense', function(source, cb)
 	end
 end)
 
-ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weaponName, zone)
+ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weaponName, type, componentNum, zone)
 	local xPlayer = ESX.GetPlayerFromId(source)
-	local price = GetPrice(weaponName, zone)
+	local authorizedWeapons, selectedWeapon = Config.Zones[zone].Items
+	
 
-	if price == 0 then
-		print(('esx_weaponshop: %s attempted to buy a unknown weapon!'):format(xPlayer.identifier))
+	for k,v in ipairs(Config.Zones[zone].Items) do
+		if v.weapon == weaponName then
+			selectedWeapon = v
+			break
+		end
+	end
+
+	if not selectedWeapon then
+		print(('esx_weaponshop: %s attempted to buy an invalid weapon.'):format(xPlayer.identifier))
 		cb(false)
 	end
 
-	if xPlayer.hasWeapon(weaponName) then
-		TriggerClientEvent('esx:showNotification', source, _U('already_owned'))
-		cb(false)
-	else
-		if zone == 'BlackWeashop' then
+	if zone == 'GunShop' then
+		-- Weapon
+		if type == 1 then
+			if xPlayer.getMoney() >= selectedWeapon.price then
+				xPlayer.removeMoney(selectedWeapon.price)
+				xPlayer.addWeapon(weaponName, 100)
 
-			if xPlayer.getAccount('black_money').money >= price then
-				xPlayer.removeAccountMoney('black_money', price)
+				cb(true)
+			else
+				cb(false)
+			end
+
+		-- Weapon Component
+		elseif type == 2 then
+			local price = selectedWeapon.components[componentNum]
+			local weaponNum, weapon = ESX.GetWeapon(weaponName)
+
+			local component = weapon.components[componentNum]
+
+			if component then
+				if xPlayer.getMoney() >= price then
+					xPlayer.removeMoney(price)
+					xPlayer.addWeaponComponent(weaponName, component.name)
+
+					cb(true)
+				else
+					cb(false)
+				end
+			else
+				print(('esx_weaponshop: %s attempted to buy an invalid weapon component.'):format(xPlayer.identifier))
+				cb(false)
+			end
+
+			--Weapon Ammo
+		elseif type == 3 then
+			if xPlayer.getMoney() >= selectedWeapon.ammoPrice then
+				xPlayer.removeMoney(selectedWeapon.ammoPrice)
+				cb(true)
+			else
+				cb(false)
+			end
+		end
+	else
+		-- Weapon
+		if type == 1 then
+			if xPlayer.getAccount('black_money').money >= selectedWeapon.price then
+				xPlayer.removeAccountMoney('black_money', selectedWeapon.price)
 				xPlayer.addWeapon(weaponName, 42)
 
 				cb(true)
@@ -67,31 +89,36 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 				cb(false)
 			end
 
-		else
+		-- Weapon Component
+		elseif type == 2 then
+			local price = selectedWeapon.components[componentNum]
+			local weaponNum, weapon = ESX.GetWeapon(weaponName)
 
-			if xPlayer.getMoney() >= price then
-				xPlayer.removeMoney(price)
-				xPlayer.addWeapon(weaponName, 42)
+			local component = weapon.components[componentNum]
 
-				cb(true)
+			if component then
+				if xPlayer.getAccount('black_money').money >= price then
+					xPlayer.removeAccountMoney('black_money', price)
+					xPlayer.addWeaponComponent(weaponName, component.name)
+					cb(true)
+				else
+					TriggerClientEvent('esx:showNotification', source, _U('not_enough_black'))
+					cb(false)
+				end
 			else
-				TriggerClientEvent('esx:showNotification', source, _U('not_enough'))
+				print(('esx_weaponshop: %s attempted to buy an invalid weapon component.'):format(xPlayer.identifier))
 				cb(false)
 			end
-	
+
+			--Weapon Ammo
+		elseif type == 3 then
+			if xPlayer.getAccount('black_money').money >= selectedWeapon.ammoPrice then
+				xPlayer.removeAccountMoney('black_money', selectedWeapon.ammoPrice)
+				cb(true)
+			else
+				TriggerClientEvent('esx:showNotification', source, _U('not_enough_black'))
+				cb(false)
+			end
 		end
 	end
 end)
-
-function GetPrice(weaponName, zone)
-	local price = MySQL.Sync.fetchScalar('SELECT price FROM weashops WHERE zone = @zone AND item = @item', {
-		['@zone'] = zone,
-		['@item'] = weaponName
-	})
-
-	if price then
-		return price
-	else
-		return 0
-	end
-end

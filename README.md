@@ -18,7 +18,7 @@ git clone https://github.com/ESX-Org/esx_weaponshop.git [esx]/esx_weaponshop
 - Put it in the `[esx]` directory
 
 ## Installation
-- Import `esx_weaponshop.sql` in your database
+- Add your items in `config.lua`
 - Add this to your `server.cfg`:
 
 ```

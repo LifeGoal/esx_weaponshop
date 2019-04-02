@@ -24,19 +24,9 @@ Citizen.CreateThread(function()
 		Citizen.Wait(0)
 	end
 
-	ESX.TriggerServerCallback('esx_weaponshop:getShop', function(shopItems)
-		for k,v in pairs(shopItems) do
-			Config.Zones[k].Items = v
-		end
-	end)
 end)
 
-RegisterNetEvent('esx_weaponshop:sendShop')
-AddEventHandler('esx_weaponshop:sendShop', function(shopItems)
-	for k,v in pairs(shopItems) do
-		Config.Zones[k].Items = v
-	end
-end)
+
 
 function OpenBuyLicenseMenu(zone)
 	ESX.UI.Menu.CloseAll()
@@ -62,57 +52,230 @@ function OpenBuyLicenseMenu(zone)
 	end)
 end
 
+
 function OpenShopMenu(zone)
 	local elements = {}
+	local buyAmmo = {}
 	ShopOpen = true
+	local playerPed = PlayerPedId()
+	PlayerData = ESX.GetPlayerData()
 
-	for i=1, #Config.Zones[zone].Items, 1 do
-		local item = Config.Zones[zone].Items[i]
+	for k,v in ipairs(Config.Zones[zone].Items) do
+		local weaponNum, weapon = ESX.GetWeapon(v.weapon)
+		local components, label = {}
 
+		local hasWeapon = HasPedGotWeapon(playerPed, GetHashKey(v.weapon), false)
+
+		if v.components then
+			for i=1, #v.components do
+				if v.components[i] then
+
+					local component = weapon.components[i]
+					local hasComponent = HasPedGotWeaponComponent(playerPed, GetHashKey(v.weapon), component.hash)
+
+					if hasComponent then
+						label = ('%s: <span style="color:green;">%s</span>'):format(component.label, _U('gunshop_owned'))
+					else
+						if v.components[i] > 0 then
+							label = ('%s: <span style="color:green;">%s</span>'):format(component.label, _U('gunshop_item', ESX.Math.GroupDigits(v.components[i])))
+						else
+							label = ('%s: <span style="color:green;">%s</span>'):format(component.label, _U('gunshop_free'))
+						end
+					end
+
+					table.insert(components, {
+						label = label,
+						componentLabel = component.label,
+						hash = component.hash,
+						name = component.name,
+						price = v.components[i],
+						hasComponent = hasComponent,
+						componentNum = i
+					})
+				end
+			end
+			table.insert(components, {
+				label = _U('buy_ammo')..'<span style="color:green;">'..ESX.Math.GroupDigits(v.ammoPrice)..' $ </span>',
+				type = 'ammo',
+				price = v.ammoPrice,
+				weapon = weapon.name
+			})
+		end
+
+		if hasWeapon and v.components then
+			label = ('%s: <span style="color:green;">></span>'):format(weapon.label)
+		elseif hasWeapon and not v.components and v.ammoPrice ~= nil then
+			label = ('%s: <span style="color:green;">></span>'):format(weapon.label)
+		elseif hasWeapon and not v.components and v.ammoPrice == nil then
+			label = ('%s: <span style="color:green;">%s</span>'):format(weapon.label, _U('gunshop_owned'))
+		else
+			if v.price > 0 then
+				label = ('%s: <span style="color:green;">%s</span>'):format(weapon.label, _U('gunshop_item', ESX.Math.GroupDigits(v.price)))
+			else
+				label = ('%s: <span style="color:green;">%s</span>'):format(weapon.label, _U('gunshop_free'))
+			end
+		end
+		
 		table.insert(elements, {
-			label = ('%s - <span style="color: green;">%s</span>'):format(item.label, _U('shop_menu_item', ESX.Math.GroupDigits(item.price))),
-			price = item.price,
-			weaponName = item.item
+			label = label,
+			weaponLabel = weapon.label,
+			name = weapon.name,
+			components = components,
+			price = v.price,
+			ammoPrice = v.ammoPrice,
+			hasWeapon = hasWeapon
 		})
+		
 	end
-
-	ESX.UI.Menu.CloseAll()
 	PlaySoundFrontend(-1, 'BACK', 'HUD_AMMO_SHOP_SOUNDSET', false)
 
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'shop', {
-		title = _U('shop_menu_title'),
-		align = 'top-left',
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'gunshop_buy_weapons', {
+		title    = _U('gunshop_weapontitle'),
+		align    = 'top-left',
 		elements = elements
 	}, function(data, menu)
-		ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
-			if bought then
-				DisplayBoughtScaleform(data.current.weaponName, data.current.price)
-			else
-				PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+
+		if data.current.hasWeapon then
+			if #data.current.components > 0 then
+				OpenWeaponComponentShopMenu(data.current.components, data.current.name, menu, zone)
+			elseif data.current.ammoPrice ~= nil then
+
+				table.insert(buyAmmo, {
+					label = _U('buy_ammo')..'<span style="color:green;">'..ESX.Math.GroupDigits(data.current.ammoPrice)..' $ </span>',
+					price = data.current.ammoPrice,
+					weapon = data.current.name
+				})
+
+				OpenAmmoShopMenu(buyAmmo,data.current.name,menu,zone)
 			end
-		end, data.current.weaponName, zone)
+			
+		else
+			ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
+				if bought then
+					if data.current.price > 0 then
+						DisplayBoughtScaleform('weapon',data.current.name, ESX.Math.GroupDigits(data.current.price))
+					end
+					PlaySoundFrontend(-1, 'NAV', 'HUD_AMMO_SHOP_SOUNDSET', false)
+					menu.close()
+					OpenShopMenu(zone)
+					ShopOpen = false
+				else
+					PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+				end
+			end, data.current.name, 1, nil, zone)
+		end
+
 	end, function(data, menu)
 		PlaySoundFrontend(-1, 'BACK', 'HUD_AMMO_SHOP_SOUNDSET', false)
 		ShopOpen = false
 		menu.close()
+	end)
 
-		CurrentAction     = 'shop_menu'
-		CurrentActionMsg  = _U('shop_menu_prompt')
-		CurrentActionData = { zone = zone }
+end
+
+function OpenWeaponComponentShopMenu(components, weaponName, parentShop,zone)
+	ShopOpen = true
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'gunshop_buy_weapons_components', {
+		title    = _U('gunshop_componenttitle'),
+		align    = 'top-left',
+		elements = components
+	}, function(data, menu)
+
+		if data.current.hasComponent and data.current.type ~= 'ammo'then
+			ESX.ShowNotification(_U('gunshop_hascomponent'))
+		elseif data.current.type ~= 'ammo' then
+
+			ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
+				if bought then
+					if data.current.price > 0 then
+						DisplayBoughtScaleform('component',data.current.componentLabel, ESX.Math.GroupDigits(data.current.price))
+					end
+					ShopOpen = false
+					menu.close()
+					parentShop.close()
+					PlaySoundFrontend(-1, 'NAV', 'HUD_AMMO_SHOP_SOUNDSET', false)
+					OpenShopMenu(zone)
+				else
+					PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+				end
+			end, weaponName, 2, data.current.componentNum, zone)
+		elseif data.current.type == 'ammo' then
+			ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
+				if bought then
+					if data.current.price > 0 then
+						--DisplayBoughtScaleform('ammo',nil, ESX.Math.GroupDigits(data.current.price))
+						ESX.ShowNotification(_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(data.current.price)))
+						AddAmmoToPed(PlayerPedId(), weaponName, Config.AmmoToBuy)
+					end
+
+					parentShop.close()
+				else
+					PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+				end
+			end, weaponName, 3, nil, zone)
+		end
+
 	end, function(data, menu)
-		PlaySoundFrontend(-1, 'NAV', 'HUD_AMMO_SHOP_SOUNDSET', false)
+		PlaySoundFrontend(-1, 'BACK', 'HUD_AMMO_SHOP_SOUNDSET', false)
+		ShopOpen = false
+		menu.close()
 	end)
 end
 
-function DisplayBoughtScaleform(weaponName, price)
+function OpenAmmoShopMenu(buyAmmo,weaponName, parentShop,zone)
+	ShopOpen = true
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'gunshop_buy_weapons_components', {
+		title    = _U('gunshop_componenttitle'),
+		align    = 'top-left',
+		elements = buyAmmo
+	}, function(data, menu)
+		ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
+			if bought then
+				if data.current.price > 0 then
+					--DisplayBoughtScaleform('ammo',nil, ESX.Math.GroupDigits(data.current.price))
+					ESX.ShowNotification(_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(data.current.price)))
+					AddAmmoToPed(PlayerPedId(), weaponName, Config.AmmoToBuy)
+				end
+
+				parentShop.close()
+			else
+				PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
+			end
+		end, weaponName, 3, nil, zone)
+
+	end, function(data, menu)
+		menu.close()
+	end)
+end
+
+function DisplayBoughtScaleform(type, item, price)
 	local scaleform = ESX.Scaleform.Utils.RequestScaleformMovie('MP_BIG_MESSAGE_FREEMODE')
 	local sec = 4
 
+	if type == 'component' then
+		text = _U('gunshop_bought', item, ESX.Math.GroupDigits(price))
+		text2 = nil
+		text3 = nil
+	elseif type == 'weapon' then
+		text2 = ESX.GetWeaponLabel(item)
+		text = _U('gunshop_bought', text2, ESX.Math.GroupDigits(price))
+		text3 = GetHashKey(item)
+	elseif type == 'ammo' then
+		text =_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(price))
+		text2 = nil
+		text3 = nil
+	end
+
+
 	BeginScaleformMovieMethod(scaleform, 'SHOW_WEAPON_PURCHASED')
 
-	PushScaleformMovieMethodParameterString(_U('weapon_bought', ESX.Math.GroupDigits(price)))
-	PushScaleformMovieMethodParameterString(ESX.GetWeaponLabel(weaponName))
-	PushScaleformMovieMethodParameterInt(GetHashKey(weaponName))
+	PushScaleformMovieMethodParameterString(text)
+	if text2~= nil then
+	PushScaleformMovieMethodParameterString(text2)
+	end
+	if text3 ~= nil then
+		PushScaleformMovieMethodParameterInt(text3)
+	end
 	PushScaleformMovieMethodParameterString('')
 	PushScaleformMovieMethodParameterInt(100)
 

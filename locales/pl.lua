@@ -10,4 +10,13 @@ Locales ['pl'] = {
   ['shop_menu_prompt'] = 'Wciśnij ~INPUT_CONTEXT~ aby otworzyć sklep.',
   ['shop_menu_item'] = '%s PLN',
   ['map_blip'] = 'sklep z bronią',
+  ['gunshop_owned'] = 'owned',
+  ['gunshop_free'] = 'free',
+  ['gunshop_money'] = 'You don\'t have enough money',
+  ['gunshop_bought'] = 'you bought an ~y~%s~s~ for ~r~$%s~s~',
+  ['gunshop_item'] = '$%s',
+  ['gunshop_weapontitle'] = 'Weapon shop',
+  ['gunshop_componenttitle'] = 'Weapon shop - Weapon attatchments',
+  ['gunshop_hascomponent'] = 'you have that attatchment equiped!',
+  ['ammo'] = 'ammo',
 }
