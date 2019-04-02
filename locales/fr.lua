@@ -20,4 +20,5 @@ Locales ['fr'] = {
   ['gunshop_componenttitle'] = 'magasin d\'arme - Accessoires d\'armes',
   ['gunshop_hascomponent'] = 'vous avez déjà équipé cet accessoire!',
   ['ammo'] = 'munitions',
+  ['gunshop_maxammo'] = 'vous avez atteint le maximum de munition que vous pouvez posséder',
 }

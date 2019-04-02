@@ -19,4 +19,5 @@ Locales ['de'] = {
   ['gunshop_componenttitle'] = 'weapon shop - Weapon attatchments',
   ['gunshop_hascomponent'] = 'you have that attatchment equiped!',
   ['ammo'] = 'ammo',
+  ['gunshop_maxammo'] = 'you have reached maximum ammo you can hold',
 }

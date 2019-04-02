@@ -107,7 +107,7 @@ function OpenShopMenu(zone)
 			label = ('%s: <span style="color:green;">></span>'):format(weapon.label)
 		elseif hasWeapon and not v.components and v.ammoPrice ~= nil then
 			label = ('%s: <span style="color:green;">></span>'):format(weapon.label)
-		elseif hasWeapon and not v.components and v.ammoPrice == nil then
+		elseif hasWeapon and not v.components and v.ammoPrice  == nil then
 			label = ('%s: <span style="color:green;">%s</span>'):format(weapon.label, _U('gunshop_owned'))
 		else
 			if v.price > 0 then
@@ -148,6 +148,7 @@ function OpenShopMenu(zone)
 					weapon = data.current.name,
 					ammoToBuy = data.current.ammoNumber
 				})
+				print(ESX.DumpTable(buyAmmo))
 				OpenAmmoShopMenu(buyAmmo,data.current.name,menu,zone)
 			end
 			
@@ -202,6 +203,7 @@ function OpenWeaponComponentShopMenu(components, weaponName, parentShop,zone)
 				end
 			end, weaponName, 2, data.current.componentNum, zone)
 		elseif data.current.type == 'ammo' then
+			local ReachedMax = ReachedMaxAmmo(weaponName)
 			ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
 				if bought then
 					if data.current.price > 0 then
@@ -210,9 +212,12 @@ function OpenWeaponComponentShopMenu(components, weaponName, parentShop,zone)
 					end
 					parentShop.close()
 				else
+					if ReachedMax then
+						ESX.ShowNotification(_U('gunshop_maxammo'))
+					end
 					PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
 				end
-			end, weaponName, 3, nil, zone)
+			end, weaponName, 3, nil, zone, ReachedMax)
 		end
 
 	end, function(data, menu)
@@ -229,6 +234,7 @@ function OpenAmmoShopMenu(buyAmmo,weaponName, parentShop,zone)
 		align    = 'top-left',
 		elements = buyAmmo
 	}, function(data, menu)
+		local ReachedMax = ReachedMaxAmmo(weaponName)
 		ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
 			if bought then
 				if data.current.price > 0 then
@@ -237,9 +243,12 @@ function OpenAmmoShopMenu(buyAmmo,weaponName, parentShop,zone)
 				end
 				parentShop.close()
 			else
+				if ReachedMax then
+					ESX.ShowNotification(_U('gunshop_maxammo'))
+				end
 				PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
 			end
-		end, weaponName, 3, nil, zone)
+		end, weaponName, 3, nil, zone, ReachedMax)
 
 	end, function(data, menu)
 		menu.close()
@@ -258,10 +267,6 @@ function DisplayBoughtScaleform(type, item, price)
 		text2 = ESX.GetWeaponLabel(item)
 		text = _U('gunshop_bought', text2, ESX.Math.GroupDigits(price))
 		text3 = GetHashKey(item)
-	elseif type == 'ammo' then
-		text =_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(price))
-		text2 = nil
-		text3 = nil
 	end
 
 
@@ -405,3 +410,19 @@ Citizen.CreateThread(function()
 		end
 	end
 end)
+
+
+function ReachedMaxAmmo(weaponName)
+
+	local ammo = GetAmmoInPedWeapon(PlayerPedId(), weaponName)
+	local _,maxAmmo = GetMaxAmmo(PlayerPedId(), weaponName)
+	print(ammo)
+	print(maxAmmo)
+
+	if ammo ~= maxAmmo then
+		return false
+	else
+		return true
+	end
+
+end

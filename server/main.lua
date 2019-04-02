@@ -17,7 +17,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyLicense', function(source, cb)
 	end
 end)
 
-ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weaponName, type, componentNum, zone)
+ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weaponName, type, componentNum, zone, max)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	local authorizedWeapons, selectedWeapon = Config.Zones[zone].Items
 	
@@ -69,7 +69,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 
 			--Weapon Ammo
 		elseif type == 3 then
-			if xPlayer.getMoney() >= selectedWeapon.ammoPrice then
+			if xPlayer.getMoney() >= selectedWeapon.ammoPrice and not max then
 				xPlayer.removeMoney(selectedWeapon.ammoPrice)
 				cb(true)
 			else
@@ -112,7 +112,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 
 			--Weapon Ammo
 		elseif type == 3 then
-			if xPlayer.getAccount('black_money').money >= selectedWeapon.ammoPrice then
+			if xPlayer.getAccount('black_money').money >= selectedWeapon.ammoPrice and not max then
 				xPlayer.removeAccountMoney('black_money', selectedWeapon.ammoPrice)
 				cb(true)
 			else
