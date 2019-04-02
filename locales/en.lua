@@ -16,8 +16,8 @@ Locales ['en'] = {
   ['gunshop_money'] = 'You don\'t have enough money',
   ['gunshop_bought'] = 'you bought an ~y~%s~s~ for ~r~$%s~s~',
   ['gunshop_item'] = '$%s',
-  ['gunshop_weapontitle'] = 'Weapon shop',
-  ['gunshop_componenttitle'] = 'Weapon shop - Weapon attatchments',
+  ['gunshop_weapontitle'] = 'weapon shop',
+  ['gunshop_componenttitle'] = 'weapon shop - Weapon attatchments',
   ['gunshop_hascomponent'] = 'you have that attatchment equiped!',
   ['ammo'] = 'ammo',
 }

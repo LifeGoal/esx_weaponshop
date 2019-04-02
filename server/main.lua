@@ -39,7 +39,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 		if type == 1 then
 			if xPlayer.getMoney() >= selectedWeapon.price then
 				xPlayer.removeMoney(selectedWeapon.price)
-				xPlayer.addWeapon(weaponName, 100)
+				xPlayer.addWeapon(weaponName, 0)
 
 				cb(true)
 			else
@@ -81,7 +81,7 @@ ESX.RegisterServerCallback('esx_weaponshop:buyWeapon', function(source, cb, weap
 		if type == 1 then
 			if xPlayer.getAccount('black_money').money >= selectedWeapon.price then
 				xPlayer.removeAccountMoney('black_money', selectedWeapon.price)
-				xPlayer.addWeapon(weaponName, 42)
+				xPlayer.addWeapon(weaponName, 0)
 
 				cb(true)
 			else

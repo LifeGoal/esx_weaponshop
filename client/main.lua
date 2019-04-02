@@ -98,7 +98,8 @@ function OpenShopMenu(zone)
 				label = _U('buy_ammo')..'<span style="color:green;">'..ESX.Math.GroupDigits(v.ammoPrice)..' $ </span>',
 				type = 'ammo',
 				price = v.ammoPrice,
-				weapon = weapon.name
+				weapon = weapon.name,
+				ammoNumber = v.AmmoToGive
 			})
 		end
 
@@ -123,6 +124,7 @@ function OpenShopMenu(zone)
 			components = components,
 			price = v.price,
 			ammoPrice = v.ammoPrice,
+			ammoNumber = v.AmmoToGive,
 			hasWeapon = hasWeapon
 		})
 		
@@ -143,9 +145,9 @@ function OpenShopMenu(zone)
 				table.insert(buyAmmo, {
 					label = _U('buy_ammo')..'<span style="color:green;">'..ESX.Math.GroupDigits(data.current.ammoPrice)..' $ </span>',
 					price = data.current.ammoPrice,
-					weapon = data.current.name
+					weapon = data.current.name,
+					ammoToBuy = data.current.ammoNumber
 				})
-
 				OpenAmmoShopMenu(buyAmmo,data.current.name,menu,zone)
 			end
 			
@@ -203,11 +205,9 @@ function OpenWeaponComponentShopMenu(components, weaponName, parentShop,zone)
 			ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
 				if bought then
 					if data.current.price > 0 then
-						--DisplayBoughtScaleform('ammo',nil, ESX.Math.GroupDigits(data.current.price))
 						ESX.ShowNotification(_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(data.current.price)))
-						AddAmmoToPed(PlayerPedId(), weaponName, Config.AmmoToBuy)
+						AddAmmoToPed(PlayerPedId(), weaponName, data.current.ammoNumber)
 					end
-
 					parentShop.close()
 				else
 					PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
@@ -232,11 +232,9 @@ function OpenAmmoShopMenu(buyAmmo,weaponName, parentShop,zone)
 		ESX.TriggerServerCallback('esx_weaponshop:buyWeapon', function(bought)
 			if bought then
 				if data.current.price > 0 then
-					--DisplayBoughtScaleform('ammo',nil, ESX.Math.GroupDigits(data.current.price))
 					ESX.ShowNotification(_U('gunshop_bought',_U('ammo'),ESX.Math.GroupDigits(data.current.price)))
-					AddAmmoToPed(PlayerPedId(), weaponName, Config.AmmoToBuy)
+					AddAmmoToPed(PlayerPedId(), weaponName, data.current.ammoToBuy)
 				end
-
 				parentShop.close()
 			else
 				PlaySoundFrontend(-1, 'ERROR', 'HUD_AMMO_SHOP_SOUNDSET', false)
@@ -270,10 +268,10 @@ function DisplayBoughtScaleform(type, item, price)
 	BeginScaleformMovieMethod(scaleform, 'SHOW_WEAPON_PURCHASED')
 
 	PushScaleformMovieMethodParameterString(text)
-	if text2~= nil then
-	PushScaleformMovieMethodParameterString(text2)
+	if text2 then
+		PushScaleformMovieMethodParameterString(text2)
 	end
-	if text3 ~= nil then
+	if text3 then
 		PushScaleformMovieMethodParameterInt(text3)
 	end
 	PushScaleformMovieMethodParameterString('')
